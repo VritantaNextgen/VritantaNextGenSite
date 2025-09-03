@@ -14,6 +14,7 @@ import Register from './components/Register'
 import { BlogPage } from './components/BlogPage'
 import { BlogPost } from './components/BlogPost'
 import { BlogAdmin } from './components/BlogAdmin'
+import { ScrollProgress } from './components/ScrollProgress'
 
 function AppContent() {
   const { user, loading, isAdmin, isCustomer, isSuperAdmin } = useAuth()
@@ -61,7 +62,9 @@ function AppContent() {
   }
 
   return (
-    <Routes>
+    <>
+      <ScrollProgress />
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginSelection onBack={() => navigate('/')} onRoleSelect={() => {}} />} />
       <Route path="/register" element={<Register />} />
@@ -145,6 +148,7 @@ function AppContent() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+      </>
   )
 }
 

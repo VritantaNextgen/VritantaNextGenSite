@@ -15,21 +15,7 @@ export async function logDatabaseState() {
       });
     });
     
-    // Log raw localStorage data
-    if (typeof localStorage !== 'undefined') {
-      const rawData = localStorage.getItem('db_users');
-      console.log('Raw localStorage data exists:', !!rawData);
-      if (rawData) {
-        try {
-          const parsedData = JSON.parse(rawData);
-          console.log('Parsed localStorage data length:', parsedData.length);
-        } catch (e) {
-          console.error('Error parsing localStorage data:', e);
-        }
-      }
-    } else {
-      console.warn('localStorage is not available');
-    }
+    console.log('Database state logged successfully');
   } catch (error) {
     console.error('Error logging database state:', error);
   }
@@ -38,52 +24,38 @@ export async function logDatabaseState() {
 // Function to fix database issues
 export async function fixDatabaseIssues() {
   try {
-    console.log('Attempting to fix database issues...');
+    console.log('Checking for database issues...');
     
-    // Check if localStorage is available
-    if (typeof localStorage === 'undefined') {
-      console.warn('localStorage is not available, cannot fix database');
+    // Check if we can connect to the database with timeout
+    try {
+      const usersPromise = db.users.list({ where: {}, limit: 1 });
+      const users = await Promise.race([
+        usersPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Database connection timeout')), 3000))
+      ]);
+      
+      console.log('Database connection successful, users count:', users.length);
+      
+      // Check if we have any admin users
+      const adminUsers = await db.users.list({ where: { role: 'admin' } });
+      const superAdminUsers = await db.users.list({ where: { role: 'superadmin' } });
+      
+      console.log('Admin users:', adminUsers.length);
+      console.log('SuperAdmin users:', superAdminUsers.length);
+      
+      if (adminUsers.length === 0 && superAdminUsers.length === 0) {
+        console.log('No admin users found, this might be expected for a fresh install');
+      }
+      
+    } catch (error) {
+      console.warn('Database connection issue (may be expected):', error.message);
+      // Don't throw here - this might be expected in development
       return;
     }
     
-    // Get current users
-    const users = await db.users.list({ where: {} });
-    console.log('Current users count:', users.length);
-    
-    if (users.length === 0) {
-      console.log('No users found, creating test users...');
-      
-      // Create admin user
-      const adminUser = {
-        id: `user_${Date.now()}_admin`,
-        email: 'admin@example.com',
-        passwordHash: 'admin123', // Plain text for easy testing
-        displayName: 'Admin User',
-        role: 'admin',
-        isActive: '1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Create test user
-      const testUser = {
-        id: `user_${Date.now()}_test`,
-        email: 'test@example.com',
-        passwordHash: 'test123', // Plain text for easy testing
-        displayName: 'Test User',
-        role: 'customer',
-        isActive: '1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Save users to localStorage directly
-      localStorage.setItem('db_users', JSON.stringify([adminUser, testUser]));
-      console.log('Test users created and saved directly to localStorage');
-    }
-    
-    console.log('Database fix attempt completed');
+    console.log('Database check completed');
   } catch (error) {
-    console.error('Error fixing database issues:', error);
+    console.warn('Non-critical error fixing database issues:', error);
+    // Don't throw here, let the app continue
   }
 }

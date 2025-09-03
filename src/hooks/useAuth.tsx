@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Ensure at least one admin user exists for dev/testing
         const dbContent = localStorage.getItem('db_usersNew') || '[]'
-        let users = JSON.parse(dbContent)
+        const users = JSON.parse(dbContent)
         const adminExists = users.some((u: any) => u.email === 'admin@example.com' && (u.role === 'admin' || u.role === 'superadmin'))
         if (!adminExists) {
           // Create a default admin user with plain text password for dev
